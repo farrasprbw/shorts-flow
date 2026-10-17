@@ -1,59 +1,169 @@
-# ShortsFlow
+# ⚡ ShortsFlow — Multi-Tier Video Automation & Review Platform
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.2.3.
+ShortsFlow adalah sistem otomasi produksi konten video vertikal (YouTube Shorts, Instagram Reels, TikTok) yang dilengkapi dengan mekanisme persetujuan berjenjang (*multi-tier human-in-the-loop review*), proteksi benturan persetujuan bersamaan (*anti-race condition*), bot Telegram interaktif dua arah, worker antrian background (BullMQ + Redis), serta dashboard modern berbasis Angular v19 Signals & Tailwind CSS.
 
-## Development server
+---
 
-To start a local development server, run:
+## 🌟 Fitur Utama
 
-```bash
-ng serve
-```
+- **Multi-Tier Review Pipeline**: Alur persetujuan berjenjang dari Reviewer Level 1 (naskah/audio hook) hingga Reviewer Level 2 (validasi final & brand alignment).
+- **Anti-Race Condition Engine**: Transaksi basis data atomik (`conditional UPDATE` dengan level & version check) yang mencegah *double approval* atau benturan keputusan antara Web Dashboard dan Telegram Bot (menghasilkan HTTP 409 Conflict bagi aksi yang terlambat).
+- **Interactive Telegram Bot**: Notifikasi review langsung dikirim ke Telegram sesuai tier reviewer, dilengkapi tombol aksi inline dan sinkronisasi status dua arah secara *real-time*.
+- **Automated Video Generation**: Worker background berbasis BullMQ yang merender video vertikal 9:16 (1080x1920) dengan visual test pattern dinamis dan audio sintetis menggunakan FFmpeg.
+- **Direct YouTube Shorts Upload**: Integrasi resmi YouTube Data API v3 OAuth2 yang secara otomatis mengunggah video ke YouTube Shorts segera setelah memperoleh persetujuan final (atau sesuai jadwal tayang).
+- **Live YouTube Analytics & Sync**: Sinkronisasi metrik performa asli (*Views, Likes, Comments*) secara berkala setiap 60 detik dari YouTube Data API v3 ke tabel basis data, lengkap dengan tombol manual refresh di dashboard.
+- **Pure API Architecture**: Seluruh fitur (Review Queue, Jadwal Tayang, RBAC, dan Analitik) berjalan murni dari API dan database PostgreSQL tanpa ketergantungan data dummy/mock lokal.
+- **Automated Due Scheduler**: Pengecekan background berkala yang mempublikasikan video terjadwal secara tepat waktu (`scheduled_at <= NOW()`).
+- **Dynamic RBAC & Persona Switcher**: Pengelolaan peran fleksibel (`admin`, `reviewer_level_1`, `reviewer_level_2`, `viewer`) dengan pengujian persona langsung di dashboard.
+- **Modern Angular v19 UI**: Dibangun dengan Angular Signals tanpa Zone.js, Tailwind CSS, dark aesthetic, dan bebas dari tipe data `any`.
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+---
 
-## Code scaffolding
+## 🏗️ Arsitektur & Teknologi
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+| Layer | Teknologi | Deskripsi |
+| :--- | :--- | :--- |
+| **Frontend** | Angular v19, Tailwind CSS, Lucide Icons, TypeScript Strict | SPA dengan Signals, zero-`any` typing, filter tier dinamis |
+| **Backend API** | Node.js, Fastify, TypeScript Strict, JWT, bcryptjs | REST API modular dengan route guards dan conditional updates |
+| **Database** | PostgreSQL 16 (Docker) | Relational persistence, conditional lock queries, custom enums |
+| **Queue & Cache** | Redis 7, BullMQ | Antrian background terdistribusi (`video-generation`, `video-publishing`) |
+| **Video Engine** | FFmpeg (`@ffmpeg-installer/ffmpeg`) | Rendering video 9:16, audio tone generator, snapshot thumbnail |
+| **Bot Service** | grammY Framework | Bot Telegram long-polling, inline callback keyboards, real-time message edits |
+| **Publishing** | Google APIs (`googleapis`), OAuth2 | Integrasi resmi upload video ke YouTube Shorts |
 
-```bash
-ng generate component component-name
-```
+---
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## 📋 Prasyarat Sistem
 
-```bash
-ng generate --help
-```
+- **Node.js**: Versi 20.x atau lebih baru
+- **Docker & Docker Compose**: Untuk menjalankan PostgreSQL dan Redis
+- **Akun Google Cloud** *(Opsional, untuk upload YouTube)*: Project dengan YouTube Data API v3 diaktifkan
+- **Bot Telegram** *(Opsional, untuk review via chat)*: Token bot dari [@BotFather](https://t.me/BotFather)
 
-## Building
+---
 
-To build the project run:
+## 🚀 Panduan Memulai Cepat (Quickstart)
 
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
+### 1. Clone & Instal Dependensi
 
 ```bash
-ng e2e
+# Clone repositori
+git clone https://github.com/username/shorts-flow.git
+cd shorts-flow
+
+# Instal dependensi frontend
+npm install
+
+# Instal dependensi backend
+cd server
+npm install
+cd ..
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+### 2. Jalankan Layanan Database & Redis
 
-## Additional Resources
+Jalankan container PostgreSQL dan Redis menggunakan Docker Compose:
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+```bash
+docker compose up -d
+```
+
+> [!NOTE]
+> File `docker/init-db/01-init.sql` akan otomatis diinisialisasi oleh PostgreSQL pada container boot pertama untuk membuat tabel, enum, role, dan baseline user.
+
+### 3. Konfigurasi Environment Variables
+
+Salin template environment pada folder `server`:
+
+```bash
+cp server/.env.example server/.env
+```
+
+Sesuaikan konfigurasi pada `server/.env` (gunakan placeholder berikut):
+
+```env
+# Server
+PORT=3000
+NODE_ENV=development
+JWT_SECRET="<YOUR_RANDOM_JWT_SECRET>"
+
+# Database & Cache (sesuai docker-compose.yml)
+DATABASE_URL="postgres://postgres:postgres@localhost:5432/shortsflow"
+REDIS_HOST="localhost"
+REDIS_PORT=6379
+
+# Telegram Bot (Opsional)
+TELEGRAM_BOT_TOKEN="<YOUR_TELEGRAM_BOT_TOKEN>"
+TELEGRAM_CHAT_ID="<YOUR_TELEGRAM_CHAT_ID>"
+
+# YouTube OAuth (Opsional)
+YOUTUBE_CLIENT_ID="<YOUR_GOOGLE_CLIENT_ID>.apps.googleusercontent.com"
+YOUTUBE_CLIENT_SECRET="<YOUR_GOOGLE_CLIENT_SECRET>"
+YOUTUBE_REDIRECT_URI="http://localhost:3000/api/youtube/callback"
+```
+
+> [!IMPORTANT]
+> Jangan pernah mencantumkan token Telegram riil atau Google Client Secret ke dalam repositori publik.
+
+### 4. Jalankan Aplikasi
+
+**Jalankan Backend & Worker (Terminal 1):**
+```bash
+cd server
+npm run dev
+```
+Backend API akan aktif di `http://localhost:3000`.
+
+**Jalankan Frontend Angular (Terminal 2):**
+```bash
+npm start
+```
+Dashboard akan dapat diakses melalui browser di `http://localhost:4200`.
+
+---
+
+## 👥 Akun Pengguna & Persona Pengujian
+
+Untuk memisahkan data akun dan kredensial pengujian dari dokumentasi publik, detail lengkap mengenai:
+- Persona pengujian (**Farras** [Admin & L2], **Michael** [Reviewer L1], **Sarah** [L2], **Viewer**)
+- Default password
+- Cara menghubungkan akun Telegram menggunakan perintah `/link <email>`
+- Konfigurasi Google OAuth2 untuk YouTube
+
+Telah didokumentasikan secara terpisah pada:
+👉 **[planning/ACCOUNTS.md](file:///d:/Work/Code/shorts-flow/planning/ACCOUNTS.md)**
+
+---
+
+## 🧪 Validasi Happy Flow & Pengujian Fitur
+
+1. **Membuat Video Baru**:
+   - Di dashboard, klik tombol **Buat Video AI**.
+   - Masukkan topik (misal: *Inovasi AI & Cloud 2026*), lalu klik **Generate Video**.
+   - BullMQ worker akan merender video dan menyimpannya ke database dengan status `pending_review` (Level 1).
+2. **Review Level 1 (Michael)**:
+   - Gunakan persona switcher di sidebar untuk memilih **Michael (Reviewer Level 1)**.
+   - Buka kartu video, lalu klik **Approve Level 1**. Video akan berlanjut ke Level 2.
+3. **Review Level 2 & Final Approval (Farras)**:
+   - Ganti persona ke **Farras (Admin & Reviewer L2)**.
+   - Buka kartu video, lalu klik **Approve Final (L2)** (bisa dilakukan di Web Dashboard maupun melalui tombol inline di Telegram).
+4. **Otomasi Upload ke YouTube**:
+   - Setelah final approval, worker `videoPublishingQueue` otomatis mengambil file video dan mengunggahnya ke channel YouTube Shorts yang terhubung.
+   - Tautan video Shorts yang berhasil diunggah akan langsung dikirimkan ke Telegram bot.
+5. **Simulasi Benturan (Anti-Race Condition)**:
+   - Di tab Review Queue, klik tombol **Simulasi Benturan Approval**.
+   - Sistem akan menembakkan dua aksi simultan pada milidetik yang sama. Tepat satu aksi diterima dan aksi kedua ditolak dengan HTTP 409 Conflict tanpa merusak integritas database.
+
+---
+
+## 📁 Struktur Dokumen Perencanaan
+
+- [planning/ACCOUNTS.md](file:///d:/Work/Code/shorts-flow/planning/ACCOUNTS.md) — Kredensial akun, data persona, dan panduan linking Telegram.
+- [planning/implementation_plan.md](file:///d:/Work/Code/shorts-flow/planning/implementation_plan.md) — Blueprint teknis, arsitektur antrian, skema DB, dan fase pengembangan.
+- [planning/backend_worker_prompt.md](file:///d:/Work/Code/shorts-flow/planning/backend_worker_prompt.md) — Rencana implementasi worker, FFmpeg pipeline, dan prompt backend.
+
+---
+
+## 📄 Lisensi
+
+Proyek ini dilisensikan di bawah lisensi MIT.

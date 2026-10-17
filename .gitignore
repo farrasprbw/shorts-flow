@@ -5,11 +5,25 @@
 /tmp
 /out-tsc
 /bazel-out
+server/dist
 
 # Node
-/node_modules
-npm-debug.log
-yarn-error.log
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Environment & Local Storage
+.env
+.env.*
+*.env
+server/.env
+server/tokens.json
+storage/
+server/storage/
+
 
 # IDEs and editors
 .idea/
@@ -42,3 +56,6 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Planning Directory
+/planning/
