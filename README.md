@@ -1,17 +1,17 @@
 # ⚡ ShortsFlow — Multi-Tier Video Automation & Review Platform
 
-ShortsFlow adalah sistem otomasi produksi konten video vertikal (YouTube Shorts, Instagram Reels, TikTok) yang dilengkapi dengan mekanisme persetujuan berjenjang (*multi-tier human-in-the-loop review*), proteksi benturan persetujuan bersamaan (*anti-race condition*), bot Telegram interaktif dua arah, worker antrian background (BullMQ + Redis), serta dashboard modern berbasis Angular v19 Signals & Tailwind CSS.
+ShortsFlow adalah sistem otomasi produksi konten video vertikal (YouTube Shorts, Instagram Reels, TikTok) yang dilengkapi dengan mekanisme persetujuan berjenjang (_multi-tier human-in-the-loop review_), proteksi benturan persetujuan bersamaan (_anti-race condition_), bot Telegram interaktif dua arah, worker antrian background (BullMQ + Redis), serta dashboard modern berbasis Angular v19 Signals & Tailwind CSS.
 
 ---
 
 ## 🌟 Fitur Utama
 
 - **Multi-Tier Review Pipeline**: Alur persetujuan berjenjang dari Reviewer Level 1 (naskah/audio hook) hingga Reviewer Level 2 (validasi final & brand alignment).
-- **Anti-Race Condition Engine**: Transaksi basis data atomik (`conditional UPDATE` dengan level & version check) yang mencegah *double approval* atau benturan keputusan antara Web Dashboard dan Telegram Bot (menghasilkan HTTP 409 Conflict bagi aksi yang terlambat).
-- **Interactive Telegram Bot**: Notifikasi review langsung dikirim ke Telegram sesuai tier reviewer, dilengkapi tombol aksi inline dan sinkronisasi status dua arah secara *real-time*.
+- **Anti-Race Condition Engine**: Transaksi basis data atomik (`conditional UPDATE` dengan level & version check) yang mencegah _double approval_ atau benturan keputusan antara Web Dashboard dan Telegram Bot (menghasilkan HTTP 409 Conflict bagi aksi yang terlambat).
+- **Interactive Telegram Bot**: Notifikasi review langsung dikirim ke Telegram sesuai tier reviewer, dilengkapi tombol aksi inline dan sinkronisasi status dua arah secara _real-time_.
 - **Automated Video Generation**: Worker background berbasis BullMQ yang merender video vertikal 9:16 (1080x1920) dengan visual test pattern dinamis dan audio sintetis menggunakan FFmpeg.
 - **Direct YouTube Shorts Upload**: Integrasi resmi YouTube Data API v3 OAuth2 yang secara otomatis mengunggah video ke YouTube Shorts segera setelah memperoleh persetujuan final (atau sesuai jadwal tayang).
-- **Live YouTube Analytics & Sync**: Sinkronisasi metrik performa asli (*Views, Likes, Comments*) secara berkala setiap 60 detik dari YouTube Data API v3 ke tabel basis data, lengkap dengan tombol manual refresh di dashboard.
+- **Live YouTube Analytics & Sync**: Sinkronisasi metrik performa asli (_Views, Likes, Comments_) secara berkala setiap 60 detik dari YouTube Data API v3 ke tabel basis data, lengkap dengan tombol manual refresh di dashboard.
 - **Pure API Architecture**: Seluruh fitur (Review Queue, Jadwal Tayang, RBAC, dan Analitik) berjalan murni dari API dan database PostgreSQL tanpa ketergantungan data dummy/mock lokal.
 - **Automated Due Scheduler**: Pengecekan background berkala yang mempublikasikan video terjadwal secara tepat waktu (`scheduled_at <= NOW()`).
 - **Dynamic RBAC & Persona Switcher**: Pengelolaan peran fleksibel (`admin`, `reviewer_level_1`, `reviewer_level_2`, `viewer`) dengan pengujian persona langsung di dashboard.
@@ -21,15 +21,15 @@ ShortsFlow adalah sistem otomasi produksi konten video vertikal (YouTube Shorts,
 
 ## 🏗️ Arsitektur & Teknologi
 
-| Layer | Teknologi | Deskripsi |
-| :--- | :--- | :--- |
-| **Frontend** | Angular v19, Tailwind CSS, Lucide Icons, TypeScript Strict | SPA dengan Signals, zero-`any` typing, filter tier dinamis |
-| **Backend API** | Node.js, Fastify, TypeScript Strict, JWT, bcryptjs | REST API modular dengan route guards dan conditional updates |
-| **Database** | PostgreSQL 16 (Docker) | Relational persistence, conditional lock queries, custom enums |
-| **Queue & Cache** | Redis 7, BullMQ | Antrian background terdistribusi (`video-generation`, `video-publishing`) |
-| **Video Engine** | FFmpeg (`@ffmpeg-installer/ffmpeg`) | Rendering video 9:16, audio tone generator, snapshot thumbnail |
-| **Bot Service** | grammY Framework | Bot Telegram long-polling, inline callback keyboards, real-time message edits |
-| **Publishing** | Google APIs (`googleapis`), OAuth2 | Integrasi resmi upload video ke YouTube Shorts |
+| Layer             | Teknologi                                                  | Deskripsi                                                                     |
+| :---------------- | :--------------------------------------------------------- | :---------------------------------------------------------------------------- |
+| **Frontend**      | Angular v19, Tailwind CSS, Lucide Icons, TypeScript Strict | SPA dengan Signals, zero-`any` typing, filter tier dinamis                    |
+| **Backend API**   | Node.js, Fastify, TypeScript Strict, JWT, bcryptjs         | REST API modular dengan route guards dan conditional updates                  |
+| **Database**      | PostgreSQL 16 (Docker)                                     | Relational persistence, conditional lock queries, custom enums                |
+| **Queue & Cache** | Redis 7, BullMQ                                            | Antrian background terdistribusi (`video-generation`, `video-publishing`)     |
+| **Video Engine**  | FFmpeg (`@ffmpeg-installer/ffmpeg`)                        | Rendering video 9:16, audio tone generator, snapshot thumbnail                |
+| **Bot Service**   | grammY Framework                                           | Bot Telegram long-polling, inline callback keyboards, real-time message edits |
+| **Publishing**    | Google APIs (`googleapis`), OAuth2                         | Integrasi resmi upload video ke YouTube Shorts                                |
 
 ---
 
@@ -37,8 +37,8 @@ ShortsFlow adalah sistem otomasi produksi konten video vertikal (YouTube Shorts,
 
 - **Node.js**: Versi 20.x atau lebih baru
 - **Docker & Docker Compose**: Untuk menjalankan PostgreSQL dan Redis
-- **Akun Google Cloud** *(Opsional, untuk upload YouTube)*: Project dengan YouTube Data API v3 diaktifkan
-- **Bot Telegram** *(Opsional, untuk review via chat)*: Token bot dari [@BotFather](https://t.me/BotFather)
+- **Akun Google Cloud** _(Opsional, untuk upload YouTube)_: Project dengan YouTube Data API v3 diaktifkan
+- **Bot Telegram** _(Opsional, untuk review via chat)_: Token bot dari [@BotFather](https://t.me/BotFather)
 
 ---
 
@@ -108,16 +108,20 @@ YOUTUBE_REDIRECT_URI="http://localhost:3000/api/youtube/callback"
 ### 4. Jalankan Aplikasi
 
 **Jalankan Backend & Worker (Terminal 1):**
+
 ```bash
 cd server
 npm run dev
 ```
+
 Backend API akan aktif di `http://localhost:3000`.
 
 **Jalankan Frontend Angular (Terminal 2):**
+
 ```bash
 npm start
 ```
+
 Dashboard akan dapat diakses melalui browser di `http://localhost:4200`.
 
 ---
@@ -125,13 +129,11 @@ Dashboard akan dapat diakses melalui browser di `http://localhost:4200`.
 ## 👥 Akun Pengguna & Persona Pengujian
 
 Untuk memisahkan data akun dan kredensial pengujian dari dokumentasi publik, detail lengkap mengenai:
+
 - Persona pengujian (**Farras** [Admin & L2], **Michael** [Reviewer L1], **Sarah** [L2], **Viewer**)
 - Default password
 - Cara menghubungkan akun Telegram menggunakan perintah `/link <email>`
 - Konfigurasi Google OAuth2 untuk YouTube
-
-Telah didokumentasikan secara terpisah pada:
-👉 **[planning/ACCOUNTS.md](file:///d:/Work/Code/shorts-flow/planning/ACCOUNTS.md)**
 
 ---
 
@@ -139,7 +141,7 @@ Telah didokumentasikan secara terpisah pada:
 
 1. **Membuat Video Baru**:
    - Di dashboard, klik tombol **Buat Video AI**.
-   - Masukkan topik (misal: *Inovasi AI & Cloud 2026*), lalu klik **Generate Video**.
+   - Masukkan topik (misal: _Inovasi AI & Cloud 2026_), lalu klik **Generate Video**.
    - BullMQ worker akan merender video dan menyimpannya ke database dengan status `pending_review` (Level 1).
 2. **Review Level 1 (Michael)**:
    - Gunakan persona switcher di sidebar untuk memilih **Michael (Reviewer Level 1)**.
@@ -153,14 +155,6 @@ Telah didokumentasikan secara terpisah pada:
 5. **Simulasi Benturan (Anti-Race Condition)**:
    - Di tab Review Queue, klik tombol **Simulasi Benturan Approval**.
    - Sistem akan menembakkan dua aksi simultan pada milidetik yang sama. Tepat satu aksi diterima dan aksi kedua ditolak dengan HTTP 409 Conflict tanpa merusak integritas database.
-
----
-
-## 📁 Struktur Dokumen Perencanaan
-
-- [planning/ACCOUNTS.md](file:///d:/Work/Code/shorts-flow/planning/ACCOUNTS.md) — Kredensial akun, data persona, dan panduan linking Telegram.
-- [planning/implementation_plan.md](file:///d:/Work/Code/shorts-flow/planning/implementation_plan.md) — Blueprint teknis, arsitektur antrian, skema DB, dan fase pengembangan.
-- [planning/backend_worker_prompt.md](file:///d:/Work/Code/shorts-flow/planning/backend_worker_prompt.md) — Rencana implementasi worker, FFmpeg pipeline, dan prompt backend.
 
 ---
 
