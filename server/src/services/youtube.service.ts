@@ -81,6 +81,8 @@ export async function uploadToYouTubeShorts(params: {
   description: string;
   tags?: string[];
   privacyStatus?: 'public' | 'unlisted' | 'private';
+  madeForKids?: boolean;
+  category?: string;
 }): Promise<{ videoId: string; url: string }> {
   if (!env.YOUTUBE_REFRESH_TOKEN) {
     throw new Error('YOUTUBE_REFRESH_TOKEN belum ada. Silakan lakukan otorisasi akun YouTube terlebih dahulu.');
@@ -108,7 +110,20 @@ export async function uploadToYouTubeShorts(params: {
     : ['shorts', 'video', 'trending', 'shortsflow'];
   const cleanTags = rawTags.filter(t => t.toLowerCase() !== 'ai' && !t.toLowerCase().includes('artificial intelligence'));
 
-  console.log(`[YouTube Service] Mengupload video vertikal ke YouTube Shorts: "${cleanTitle}"...`);
+  const categoryMap: Record<string, string> = {
+    automotive: '2',     // Autos & Vehicles
+    nature: '19',        // Travel & Events
+    technology: '28',    // Science & Technology
+    city: '19',          // Travel & Events
+    kids: '27',          // Education
+    education: '27',     // Education
+    gaming: '20',        // Gaming
+    entertainment: '24', // Entertainment
+    general: '28'
+  };
+  const categoryId = categoryMap[params.category?.toLowerCase() || 'general'] || '28';
+
+  console.log(`[YouTube Service] Mengupload video vertikal ke YouTube Shorts: "${cleanTitle}" (MadeForKids: ${params.madeForKids ?? false}, CategoryId: ${categoryId})...`);
 
   const res = await youtube.videos.insert({
     part: ['snippet', 'status'],
@@ -117,11 +132,11 @@ export async function uploadToYouTubeShorts(params: {
         title: cleanTitle.slice(0, 100),
         description: `${cleanDescription}\n\n#Shorts #ShortsFlow`,
         tags: cleanTags,
-        categoryId: '28' // Science & Technology
+        categoryId: categoryId
       },
       status: {
         privacyStatus: params.privacyStatus || 'public',
-        selfDeclaredMadeForKids: false
+        selfDeclaredMadeForKids: params.madeForKids ?? false
       }
     },
     media: {

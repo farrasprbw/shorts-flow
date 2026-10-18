@@ -25,9 +25,21 @@ import { ActionButtonComponent } from '../action-button/action-button.component'
             0:{{ video().durationSeconds < 10 ? '0' : '' }}{{ video().durationSeconds }}s
           </div>
 
-          <!-- Level Tag -->
-          <div class="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-slate-900/80 backdrop-blur-xs text-[11px] font-medium text-white flex items-center space-x-1 shadow-sm">
-            <span>Level {{ video().currentLevel }}</span>
+          <!-- Level & Category Tags -->
+          <div class="absolute top-2 left-2 flex flex-col gap-1 z-10">
+            <div class="px-2 py-0.5 rounded-full bg-slate-900/80 backdrop-blur-xs text-[11px] font-medium text-white flex items-center space-x-1 shadow-sm w-fit">
+              <span>Level {{ video().currentLevel }}</span>
+            </div>
+            @if (video().isForKids) {
+              <div class="px-1.5 py-0.5 rounded-full bg-red-600/90 text-[10px] font-bold text-white shadow-sm w-fit flex items-center space-x-0.5">
+                <span>👶 Kids</span>
+              </div>
+            }
+            @if (video().category && video().category !== 'general') {
+              <div class="px-1.5 py-0.5 rounded-full bg-black/70 backdrop-blur-xs text-[10px] font-medium text-slate-200 w-fit">
+                {{ getCategoryLabel(video().category) }}
+              </div>
+            }
           </div>
 
           <!-- Select Checkbox for Batch Review -->
@@ -132,5 +144,16 @@ export class VideoCardComponent {
     if (!dateStr) return '';
     const date = new Date(dateStr);
     return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+  }
+
+  getCategoryLabel(category?: string): string {
+    switch (category) {
+      case 'automotive': return '🚗 Otomotif';
+      case 'nature': return '🌿 Alam';
+      case 'technology': return '💻 Teknologi';
+      case 'city': return '🏙️ Kota';
+      case 'kids': return '👶 Anak';
+      default: return category ? `🎯 ${category}` : '';
+    }
   }
 }

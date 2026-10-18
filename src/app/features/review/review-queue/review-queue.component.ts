@@ -273,6 +273,46 @@ import { ToastService } from '../../../shared/services/toast.service';
               />
             </div>
 
+            <!-- Kategori Video & Footage B-Roll -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Kategori Video & Footage B-Roll</label>
+              <select
+                [(ngModel)]="selectedCategory"
+                class="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+              >
+                <option value="general">🎯 Bebas / Otomatis Sesuai Topik</option>
+                <option value="automotive">🚗 Otomotif & Mobil Supercar</option>
+                <option value="nature">🌿 Alam, Lanskap & Wisata</option>
+                <option value="technology">💻 Teknologi, Komputer & Gadget</option>
+                <option value="city">🏙️ Kota Metropolis & Urban</option>
+                <option value="kids">👶 Anak-Anak & Edukasi Ceria</option>
+              </select>
+            </div>
+
+            <!-- YouTube Made For Kids (COPPA) Setting -->
+            <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-2">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                  <span class="text-base">👶</span>
+                  <div>
+                    <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Video Khusus Anak-Anak (Made for Kids)</span>
+                    <span class="block text-[11px] text-slate-500 dark:text-slate-400">Patuhi regulasi COPPA YouTube Kids</span>
+                  </div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" [(ngModel)]="isForKids" class="sr-only peer" />
+                  <div class="w-9 h-5 bg-slate-300 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-600"></div>
+                </label>
+              </div>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                @if (isForKids) {
+                  <span class="text-red-600 dark:text-red-400 font-semibold">✓ Diaktifkan:</span> Video ini akan ditandai sebagai <em>"Yes, it's made for kids"</em> saat dipublikasikan ke YouTube.
+                } @else {
+                  <span>Tidak dicentang: Video ditandai sebagai konten umum / bukan khusus anak-anak.</span>
+                }
+              </p>
+            </div>
+
             <div>
               <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Naskah Hook / Sinopsis Singkat (Opsional)</label>
               <textarea
@@ -345,6 +385,8 @@ export class ReviewQueueComponent {
   isGenerating = signal<boolean>(false);
   newTopic = '';
   newScript = '';
+  selectedCategory = 'general';
+  isForKids = false;
   targetYouTube = false;
   targetInstagram = false;
   targetTikTok = false;
@@ -439,7 +481,9 @@ export class ReviewQueueComponent {
       await this.apiService.generateVideo({
         topic: this.newTopic,
         script: this.newScript || undefined,
-        platforms
+        platforms,
+        category: this.selectedCategory,
+        isForKids: this.isForKids
       });
 
       // Close modal and wait briefly for worker to complete render

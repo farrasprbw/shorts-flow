@@ -39,6 +39,8 @@ export interface Video {
   createdAt: string;
   updatedAt: string;
   publishedAt?: string;
+  category?: string;
+  isForKids?: boolean;
   approvalHistory: ApprovalLog[];
   // Role & permission payload
   canReview?: boolean;

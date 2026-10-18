@@ -22,7 +22,9 @@ export const videoGenerationWorker = new Worker(
       topic = 'Inovasi Teknologi 2026',
       title: inputTitle,
       script: inputScript,
-      platforms = ['youtube', 'instagram']
+      platforms = ['youtube', 'instagram'],
+      category = 'general',
+      isForKids = false
     } = job.data;
 
     // Step 1: Content / LLM script
@@ -30,14 +32,15 @@ export const videoGenerationWorker = new Worker(
     const script = inputScript || `Tahukah kamu tentang ${topic}? Banyak yang mengira ini biasa saja, padahal di baliknya tersimpan rahasia besar yang mengubah cara kerja kita. Simak sampai habis!`;
     const videoId = 'vid-' + Math.random().toString(36).substring(2, 10);
 
-    // Step 2 & 3: Render actual 9:16 vertical video via FFmpeg
-    console.log(`[Worker: FFmpeg] Memulai render 9:16 Shorts untuk video ID: ${videoId}...`);
+    // Step 2 & 3: Render actual 9:16 vertical video via FFmpeg with real B-roll motion
+    console.log(`[Worker: FFmpeg] Memulai render 9:16 Shorts (Kategori: ${category}, Kids: ${isForKids}) untuk video ID: ${videoId}...`);
     let mediaOutput;
     try {
       mediaOutput = await renderShortsVideo({
         id: videoId,
         title,
         script,
+        category,
         duration: 8
       });
     } catch (ffmpegErr) {
@@ -54,9 +57,9 @@ export const videoGenerationWorker = new Worker(
       `INSERT INTO videos (
         title, script, prompt_used, video_url, thumbnail_url,
         duration_seconds, aspect_ratio, platform_targets, status,
-        current_level, required_max_level
+        current_level, required_max_level, category, is_for_kids
       )
-      VALUES ($1, $2, $3, $4, $5, $6, '9:16', $7, 'pending_review', 1, 2)
+      VALUES ($1, $2, $3, $4, $5, $6, '9:16', $7, 'pending_review', 1, 2, $8, $9)
       RETURNING *;`,
       [
         title,
@@ -65,7 +68,9 @@ export const videoGenerationWorker = new Worker(
         mediaOutput.videoUrl,
         mediaOutput.thumbnailUrl,
         mediaOutput.durationSeconds,
-        JSON.stringify(platforms)
+        JSON.stringify(platforms),
+        category,
+        isForKids
       ]
     );
 
@@ -103,7 +108,13 @@ export const videoPublishingWorker = new Worker(
     let publishedUrl = '';
 
     // Fetch video details from DB
-    const vRes = await query('SELECT id, title, script FROM videos WHERE id = $1', [videoId]);
+    const vRes = await query<{
+      id: string;
+      title: string;
+      script: string;
+      category?: string;
+      is_for_kids?: boolean;
+    }>('SELECT id, title, script, category, is_for_kids FROM videos WHERE id = $1', [videoId]);
     const video = vRes.rows[0];
 
     if (platform === 'youtube') {
@@ -119,7 +130,8 @@ export const videoPublishingWorker = new Worker(
             await renderShortsVideo({
               id: videoId,
               title: video?.title || 'ShortsFlow Video',
-              script: video?.script || 'Video otomatis dari ShortsFlow'
+              script: video?.script || 'Video otomatis dari ShortsFlow',
+              category: video?.category || 'general'
             });
           }
 
@@ -128,7 +140,9 @@ export const videoPublishingWorker = new Worker(
             videoFilePath: storageVideoPath,
             title: video?.title || 'ShortsFlow Video',
             description: video?.script || 'Video diunggah otomatis oleh ShortsFlow workflow.',
-            privacyStatus: 'public'
+            privacyStatus: 'public',
+            madeForKids: video?.is_for_kids ?? false,
+            category: video?.category || 'general'
           });
 
           postId = ytResult.videoId;

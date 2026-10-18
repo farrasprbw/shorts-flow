@@ -256,6 +256,12 @@ import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/
                   <span class="font-medium text-slate-800 dark:text-slate-200">{{ v.durationSeconds }} Detik (9:16)</span>
                 </div>
                 <div class="flex items-center justify-between">
+                  <span class="text-slate-400">Kategori & B-Roll</span>
+                  <span class="font-semibold text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700/80">
+                    {{ getCategoryLabel(v.category) }}
+                  </span>
+                </div>
+                <div class="flex items-center justify-between">
                   <span class="text-slate-400">Persyaratan Level</span>
                   <span class="font-medium text-slate-800 dark:text-slate-200">{{ v.requiredMaxLevel }} Tingkat (L1 & L2)</span>
                 </div>
@@ -268,6 +274,35 @@ import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/
                       </span>
                     }
                   </div>
+                </div>
+
+                <!-- YouTube Made for Kids Setting & Quick Toggle -->
+                <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-700/70 bg-slate-50/70 dark:bg-slate-800/60 space-y-2 mt-2">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-1.5">
+                      <span class="text-sm">👶</span>
+                      <span class="font-semibold text-slate-800 dark:text-slate-200 text-[11px]">YouTube Kids (COPPA)</span>
+                    </div>
+                    <button
+                      type="button"
+                      (click)="toggleMadeForKids(v)"
+                      [disabled]="v.status !== 'pending_review' || isUpdatingAudience()"
+                      class="px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all shadow-sm"
+                      [class.bg-red-600]="v.isForKids"
+                      [class.text-white]="v.isForKids"
+                      [class.hover:bg-red-700]="v.isForKids"
+                      [class.bg-slate-200]="!v.isForKids"
+                      [class.dark:bg-slate-700]="!v.isForKids"
+                      [class.text-slate-700]="!v.isForKids"
+                      [class.dark:text-slate-300]="!v.isForKids"
+                      [class.hover:bg-slate-300]="!v.isForKids"
+                    >
+                      {{ v.isForKids ? '✓ Khusus Anak' : 'Konten Umum' }}
+                    </button>
+                  </div>
+                  <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                    {{ v.isForKids ? 'Video ini akan dipublikasikan dengan tag "Made for Kids" di YouTube Shorts.' : 'Video ini dipublikasikan sebagai konten umum / bukan khusus anak-anak.' }}
+                  </p>
                 </div>
               </div>
 
@@ -393,6 +428,7 @@ export class ReviewDetailComponent implements OnInit {
 
   isPlaying = signal<boolean>(false);
   isScriptExpanded = signal<boolean>(true);
+  isUpdatingAudience = signal<boolean>(false);
 
   // Modal state
   isModalOpen = signal<boolean>(false);
@@ -531,5 +567,28 @@ export class ReviewDetailComponent implements OnInit {
       hour: '2-digit',
       minute: '2-digit'
     });
+  }
+
+  getCategoryLabel(category?: string): string {
+    switch (category) {
+      case 'automotive': return '🚗 Otomotif & Mobil';
+      case 'nature': return '🌿 Alam & Wisata';
+      case 'technology': return '💻 Teknologi & Gadget';
+      case 'city': return '🏙️ Kota & Urban';
+      case 'kids': return '👶 Khusus Anak-Anak';
+      default: return '🎯 Umum / Otomatis';
+    }
+  }
+
+  async toggleMadeForKids(v: Video) {
+    this.isUpdatingAudience.set(true);
+    const nextState = !v.isForKids;
+    const res = await this.videoService.updateAudienceSettings(v.id, nextState, v.category);
+    if (res.success) {
+      this.toastService.success(nextState ? 'Video ditandai khusus anak-anak (Made for Kids).' : 'Video diubah menjadi konten umum.');
+    } else {
+      this.toastService.error(res.message);
+    }
+    this.isUpdatingAudience.set(false);
   }
 }

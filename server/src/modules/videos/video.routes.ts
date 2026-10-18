@@ -31,6 +31,8 @@ interface GenerateBody {
   title?: string;
   script?: string;
   platforms?: string[];
+  category?: string;
+  isForKids?: boolean;
 }
 
 interface SimulateBody {
@@ -69,6 +71,7 @@ export const videoRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) 
     let sql = `
       SELECT v.id, v.title, v.script, v.video_url, v.thumbnail_url, v.duration_seconds,
              v.platform_targets, v.status, v.current_level, v.required_max_level,
+             v.category, v.is_for_kids,
              v.created_at, v.updated_at
       FROM videos v
       WHERE 1=1
@@ -128,6 +131,8 @@ export const videoRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) 
         requiredMaxLevel: r.required_max_level,
         canReview,
         requiredRole,
+        category: r.category || 'general',
+        isForKids: Boolean(r.is_for_kids),
         actionableLevels: [0, r.current_level],
         createdAt: r.created_at,
         updatedAt: r.updated_at
@@ -210,6 +215,8 @@ export const videoRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) 
         status: video.status,
         currentLevel: video.current_level,
         requiredMaxLevel: video.required_max_level,
+        category: video.category || 'general',
+        isForKids: Boolean(video.is_for_kids),
         canReview,
         requiredRole,
         actionableLevels: [0, video.current_level],
@@ -355,16 +362,52 @@ export const videoRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) 
     });
   });
 
+  // PATCH /api/videos/:id/audience - Update category & made for kids setting
+  fastify.patch('/:id/audience', async (request, reply) => {
+    const { id } = request.params as VideoParams;
+    const { isForKids, category } = (request.body as { isForKids?: boolean; category?: string }) || {};
+
+    const updateFields = [];
+    const values = [];
+
+    if (typeof isForKids === 'boolean') {
+      values.push(isForKids);
+      updateFields.push(`is_for_kids = $${values.length}`);
+    }
+    if (category) {
+      values.push(category);
+      updateFields.push(`category = $${values.length}`);
+    }
+
+    if (updateFields.length === 0) {
+      return reply.status(400).send({ success: false, message: 'Tidak ada perubahan pengaturan.' });
+    }
+
+    values.push(id);
+    await query(`UPDATE videos SET ${updateFields.join(', ')}, updated_at = NOW() WHERE id = $${values.length};`, values);
+
+    return reply.send({ success: true, message: 'Pengaturan audiens & kategori video berhasil diperbarui.' });
+  });
+
   // POST /api/videos/generate - Trigger automated AI video pipeline
   fastify.post('/generate', async (request, reply) => {
-    const { topic, title, script, platforms = ['youtube', 'instagram'] } = (request.body as GenerateBody) || {};
+    const {
+      topic,
+      title,
+      script,
+      platforms = ['youtube', 'instagram'],
+      category = 'general',
+      isForKids = false
+    } = (request.body as GenerateBody) || {};
     const { videoGenerationQueue } = await import('../../workers/index.js');
 
     const job = await videoGenerationQueue.add('generate-video', {
       topic: topic || 'Inovasi & Teknologi 2026',
       title,
       script,
-      platforms
+      platforms,
+      category,
+      isForKids
     });
 
     return reply.status(202).send({

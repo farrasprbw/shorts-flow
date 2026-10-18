@@ -61,9 +61,10 @@ export async function renderShortsVideo(params: {
   id: string;
   title: string;
   script: string;
+  category?: string;
   duration?: number;
 }): Promise<GeneratedVideoOutput> {
-  const { id, title, script, duration: fallbackDuration = 10 } = params;
+  const { id, title, script, category = 'general', duration: fallbackDuration = 10 } = params;
 
   const storageDir = path.resolve(process.cwd(), 'storage');
   const videosDir = path.join(storageDir, 'videos');
@@ -108,34 +109,79 @@ export async function renderShortsVideo(params: {
   console.log(`[FFmpeg Generator] Menghasilkan voiceover bahasa Indonesia untuk: "${title}"...`);
   const hasVoiceover = await generateVoiceoverAudio(script, tempAudioFile);
 
-  // 2. Prepare FFmpeg filter graph
-  // Modern gradient: dark slate (0x0a0f1d) to deep crimson (0x4c0519)
+  // 2. Fetch or match B-roll moving video footage
+  const { getBrollVideoForTopic } = await import('../services/broll.service.js');
+  const broll = await getBrollVideoForTopic({ topic: title, category });
+
   const fontPath = 'C\\:/Windows/Fonts/arial.ttf';
-  const filterGraph = [
-    `gradients=s=1080x1920:c0=0x0a0f1d:c1=0x4c0519:type=linear:rate=30`,
-    `drawtext=fontfile='${fontPath}':text='SHORTSFLOW':fontcolor=white:fontsize=36:x=(w-text_w)/2:y=240:box=1:boxcolor=0xef4444cc:boxborderw=16`,
-    `drawtext=fontfile='${fontPath}':textfile=${relTitleFile}:fontcolor=0xfacc15:fontsize=54:line_spacing=20:x=(w-text_w)/2:y=380:box=1:boxcolor=0x000000bb:boxborderw=24`,
-    `drawtext=fontfile='${fontPath}':textfile=${relCaptionFile}:fontcolor=white:fontsize=46:line_spacing=22:x=(w-text_w)/2:y=(h-text_h)/2+100:box=1:boxcolor=0x0f172acc:boxborderw=28`
-  ].join(',');
+  const badgeText = category === 'kids'
+    ? 'EDUKASI ANAK'
+    : category === 'automotive'
+    ? 'OTOMOTIF'
+    : category === 'nature'
+    ? 'ALAM & TRAVEL'
+    : category === 'technology'
+    ? 'TEKNOLOGI'
+    : category === 'city'
+    ? 'KOTA METROPOLIS'
+    : 'SHORTSFLOW';
 
-  console.log(`[FFmpeg Generator] Merender video 9:16 Shorts vertikal: ${videoFilename}...`);
+  let ffmpegArgs: string[] = ['-y'];
 
-  const ffmpegArgs: string[] = ['-y', '-f', 'lavfi', '-i', filterGraph];
+  if (broll && fs.existsSync(broll.filePath)) {
+    console.log(`[FFmpeg Generator] 🎬 Menggunakan footage B-roll (${broll.source}): ${broll.filePath}`);
+    const relBroll = path.relative(process.cwd(), broll.filePath).replace(/\\/g, '/');
 
-  if (hasVoiceover && fs.existsSync(tempAudioFile)) {
+    const filterGraph = [
+      `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,boxblur=0.5:0.5[bg]`,
+      `[bg]drawtext=fontfile='${fontPath}':text='${badgeText}':fontcolor=white:fontsize=36:x=(w-text_w)/2:y=240:box=1:boxcolor=0xdc2626ee:boxborderw=16[v1]`,
+      `[v1]drawtext=fontfile='${fontPath}':textfile=${relTitleFile}:fontcolor=0xfacc15:fontsize=52:line_spacing=20:x=(w-text_w)/2:y=360:box=1:boxcolor=0x000000cc:boxborderw=24[v2]`,
+      `[v2]drawtext=fontfile='${fontPath}':textfile=${relCaptionFile}:fontcolor=white:fontsize=44:line_spacing=22:x=(w-text_w)/2:y=1250:box=1:boxcolor=0x0f172add:boxborderw=24[outv]`
+    ].join(';');
+
     ffmpegArgs.push(
-      '-i', relAudioFile,
-      '-c:v', 'libx264', '-preset', 'veryfast', '-pix_fmt', 'yuv420p',
-      '-c:a', 'aac', '-b:a', '128k',
+      '-stream_loop', '-1',
+      '-i', relBroll,
+      ...(hasVoiceover && fs.existsSync(tempAudioFile)
+        ? ['-i', relAudioFile]
+        : ['-f', 'lavfi', '-i', `sine=frequency=528:duration=${fallbackDuration}`]),
+      '-filter_complex', filterGraph,
+      '-map', '[outv]',
+      '-map', '1:a',
+      '-c:v', 'libx264',
+      '-preset', 'veryfast',
+      '-pix_fmt', 'yuv420p',
+      '-c:a', 'aac',
+      '-b:a', '192k',
       '-shortest'
     );
   } else {
-    ffmpegArgs.push(
-      '-f', 'lavfi', '-i', `sine=frequency=528:duration=${fallbackDuration}`,
-      '-c:v', 'libx264', '-preset', 'veryfast', '-pix_fmt', 'yuv420p',
-      '-c:a', 'aac', '-b:a', '128k',
-      '-shortest'
-    );
+    // Fallback: Gradient background
+    console.log(`[FFmpeg Generator] Menggunakan gradien visual latar belakang...`);
+    const filterGraph = [
+      `gradients=s=1080x1920:c0=0x0a0f1d:c1=0x4c0519:type=linear:rate=30`,
+      `drawtext=fontfile='${fontPath}':text='${badgeText}':fontcolor=white:fontsize=36:x=(w-text_w)/2:y=240:box=1:boxcolor=0xef4444cc:boxborderw=16`,
+      `drawtext=fontfile='${fontPath}':textfile=${relTitleFile}:fontcolor=0xfacc15:fontsize=54:line_spacing=20:x=(w-text_w)/2:y=380:box=1:boxcolor=0x000000bb:boxborderw=24`,
+      `drawtext=fontfile='${fontPath}':textfile=${relCaptionFile}:fontcolor=white:fontsize=46:line_spacing=22:x=(w-text_w)/2:y=(h-text_h)/2+100:box=1:boxcolor=0x0f172acc:boxborderw=28`
+    ].join(',');
+
+    ffmpegArgs.push('-f', 'lavfi', '-i', filterGraph);
+
+    if (hasVoiceover && fs.existsSync(tempAudioFile)) {
+      ffmpegArgs.push(
+        '-i', relAudioFile,
+        '-c:v', 'libx264', '-preset', 'veryfast', '-pix_fmt', 'yuv420p',
+        '-c:a', 'aac', '-b:a', '128k',
+        '-shortest'
+      );
+    } else {
+      ffmpegArgs.push(
+        '-f', 'lavfi', '-i', `sine=frequency=528:duration=${fallbackDuration}`,
+        '-c:v', 'libx264', '-preset', 'veryfast', '-pix_fmt', 'yuv420p',
+        '-c:a', 'aac', '-b:a', '128k',
+        '-shortest'
+      );
+    }
   }
 
   ffmpegArgs.push(videoFilePath);

@@ -270,6 +270,19 @@ export class VideoService {
     );
   }
 
+  async updateAudienceSettings(id: string, isForKids: boolean, category?: string): Promise<{ success: boolean; message: string }> {
+    try {
+      await this.apiService.updateAudienceSettings(id, { isForKids, category });
+      this._videos.update(items =>
+        items.map(v => (v.id === id ? { ...v, isForKids, category: category || v.category } : v))
+      );
+      return { success: true, message: 'Pengaturan kategori & YouTube Kids berhasil disimpan.' };
+    } catch (err: unknown) {
+      const httpErr = err as { error?: { message?: string } };
+      return { success: false, message: httpErr?.error?.message || 'Gagal memperbarui pengaturan audiens.' };
+    }
+  }
+
   resetConflict(id: string) {
     this._videos.update(items =>
       items.map(v => {

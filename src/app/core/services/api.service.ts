@@ -141,9 +141,24 @@ export class ApiService {
     );
   }
 
-  async generateVideo(data: { topic?: string; title?: string; script?: string; platforms?: string[] }): Promise<ApiResponse<Video>> {
+  async generateVideo(data: {
+    topic?: string;
+    title?: string;
+    script?: string;
+    platforms?: string[];
+    category?: string;
+    isForKids?: boolean;
+  }): Promise<ApiResponse<Video>> {
     return firstValueFrom(
       this.http.post<ApiResponse<Video>>(`${this.baseUrl}/videos/generate`, data, {
+        headers: this.getAuthHeaders()
+      })
+    );
+  }
+
+  async updateAudienceSettings(id: string, data: { isForKids?: boolean; category?: string }): Promise<ApiResponse<null>> {
+    return firstValueFrom(
+      this.http.patch<ApiResponse<null>>(`${this.baseUrl}/videos/${id}/audience`, data, {
         headers: this.getAuthHeaders()
       })
     );

@@ -82,6 +82,10 @@ CREATE TABLE IF NOT EXISTS videos (
     required_max_level INT NOT NULL DEFAULT 2,
     version INT NOT NULL DEFAULT 1,
     
+    -- Content Category & Audience Targeting
+    category VARCHAR(50) DEFAULT 'general',
+    is_for_kids BOOLEAN DEFAULT FALSE,
+    
     rejection_reason TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
