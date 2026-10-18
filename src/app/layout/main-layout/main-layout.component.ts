@@ -176,38 +176,6 @@ import { ToastService } from '../../shared/services/toast.service';
               </a>
             }
 
-            <!-- Notifications Bell -->
-            <div class="relative">
-              <button
-                (click)="toggleNotifications()"
-                class="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 relative"
-                title="Notifikasi"
-              >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-                </svg>
-                <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white dark:ring-slate-800"></span>
-              </button>
-
-              @if (isNotificationsOpen()) {
-                <div class="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 p-3 z-50 animate-in fade-in zoom-in-95">
-                  <div class="font-semibold text-xs text-slate-500 uppercase px-2 py-1 mb-1">
-                    Notifikasi Terkini
-                  </div>
-                  <div class="space-y-2 text-xs">
-                    <div class="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 border border-amber-200/50">
-                      <div class="font-semibold">Review Level 1 Menunggu</div>
-                      <div class="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5">Video AI Fakta 2026 siap ditinjau.</div>
-                    </div>
-                    <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-slate-200">
-                      <div class="font-semibold">Sinkronisasi Telegram Berhasil</div>
-                      <div class="text-[11px] text-slate-500 mt-0.5">Callback approval anti-race condition aktif.</div>
-                    </div>
-                  </div>
-                </div>
-              }
-            </div>
-
             <!-- User Avatar & Profile Dropdown -->
             <div class="relative">
               <button
@@ -273,7 +241,6 @@ export class MainLayoutComponent {
 
   isMobileMenuOpen = signal<boolean>(false);
   isUserDropdownOpen = signal<boolean>(false);
-  isNotificationsOpen = signal<boolean>(false);
   isYouTubeConnected = signal<boolean>(false);
 
   currentTitle = signal<string>('Review Queue');
@@ -296,7 +263,6 @@ export class MainLayoutComponent {
         this.currentTitle.set('Dashboard');
       }
       this.isUserDropdownOpen.set(false);
-      this.isNotificationsOpen.set(false);
     });
   }
 
@@ -309,10 +275,6 @@ export class MainLayoutComponent {
     );
     return match ? match.id : (allUsers[0]?.id || '');
   });
-
-  toggleNotifications() {
-    this.isNotificationsOpen.set(!this.isNotificationsOpen());
-  }
 
   async onSwitchUser(event: Event) {
     const target = event.target as HTMLSelectElement;
