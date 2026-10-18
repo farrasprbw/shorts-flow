@@ -128,7 +128,7 @@ export const videoPublishingWorker = new Worker(
             videoFilePath: storageVideoPath,
             title: video?.title || 'ShortsFlow AI Video',
             description: video?.script || 'Video diunggah otomatis oleh ShortsFlow AI workflow.',
-            privacyStatus: 'unlisted'
+            privacyStatus: 'public'
           });
 
           postId = ytResult.videoId;

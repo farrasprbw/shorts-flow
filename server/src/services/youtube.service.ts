@@ -109,7 +109,7 @@ export async function uploadToYouTubeShorts(params: {
         categoryId: '28' // Science & Technology
       },
       status: {
-        privacyStatus: params.privacyStatus || 'unlisted',
+        privacyStatus: params.privacyStatus || 'public',
         selfDeclaredMadeForKids: false
       }
     },
