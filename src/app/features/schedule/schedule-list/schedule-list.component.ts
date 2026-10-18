@@ -424,6 +424,7 @@ interface CalendarDay {
                 [(ngModel)]="selectedVideoId"
                 class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
+                <option value="" disabled selected>-- Pilih Video yang Disetujui --</option>
                 @for (vid of approvedVideos(); track vid.id) {
                   <option [value]="vid.id">
                     {{ vid.title }}
@@ -503,6 +504,16 @@ interface CalendarDay {
             </div>
           </div>
 
+          <!-- Validation Notice -->
+          @if (!isScheduleFormValid()) {
+            <div class="px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 text-xs text-amber-700 dark:text-amber-300 flex items-center space-x-1.5">
+              <svg class="w-4 h-4 shrink-0 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+              </svg>
+              <span>Wajib memilih video, menentukan waktu tayang, dan memilih minimal 1 platform.</span>
+            </div>
+          }
+
           <!-- Footer Buttons -->
           <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100 dark:border-slate-700">
             <app-action-button
@@ -513,6 +524,7 @@ interface CalendarDay {
             </app-action-button>
             <app-action-button
               variant="primary"
+              [disabled]="!isScheduleFormValid()"
               (clicked)="onSaveSchedule()"
             >
               Simpan Jadwal
@@ -536,10 +548,10 @@ export class ScheduleListComponent {
   selectedVideoId = '';
   scheduleDateTime = this.getDefaultScheduleDateTime();
   targetPlatforms = {
-    youtube: true,
-    instagram: true,
+    youtube: false,
+    instagram: false,
     facebook: false,
-    tiktok: true
+    tiktok: false
   };
 
   getDefaultScheduleDateTime(targetDate?: Date): string {
@@ -681,11 +693,26 @@ export class ScheduleListComponent {
 
   openScheduleModal(targetDate?: Date) {
     this.scheduleDateTime = this.getDefaultScheduleDateTime(targetDate);
-    const list = this.approvedVideos();
-    if (list.length > 0) {
-      this.selectedVideoId = list[0].id;
-    }
+    this.selectedVideoId = '';
+    this.targetPlatforms = {
+      youtube: false,
+      instagram: false,
+      facebook: false,
+      tiktok: false
+    };
     this.isScheduleModalOpen.set(true);
+  }
+
+  isScheduleFormValid(): boolean {
+    const hasVideo = Boolean(this.selectedVideoId && this.selectedVideoId.trim() !== '');
+    const hasDateTime = Boolean(this.scheduleDateTime && this.scheduleDateTime.trim() !== '');
+    const hasPlatform = Boolean(
+      this.targetPlatforms.youtube ||
+      this.targetPlatforms.instagram ||
+      this.targetPlatforms.facebook ||
+      this.targetPlatforms.tiktok
+    );
+    return hasVideo && hasDateTime && hasPlatform;
   }
 
   onSaveSchedule() {
