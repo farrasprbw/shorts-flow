@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "ShortsFlow Backend API & Background Worker",
   "main": "dist/index.js",
+  "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "worker": "tsx watch src/workers/index.ts",

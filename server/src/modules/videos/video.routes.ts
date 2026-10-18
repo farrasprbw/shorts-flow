@@ -277,6 +277,84 @@ export const videoRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) 
     return reply.status(result.statusCode).send(result);
   });
 
+  // POST /api/videos/:id/revision
+  fastify.post('/:id/revision', {
+    preHandler: [fastify.authenticate]
+  }, async (request, reply) => {
+    const { id } = request.params as VideoParams;
+    const { level, note } = (request.body as ApprovalBody) || {};
+    const user = request.user as DecodedJwt;
+
+    const userLevels: number[] = user.levels || [];
+    const isAuthorized = userLevels.includes(level);
+
+    if (!isAuthorized) {
+      return reply.status(403).send({
+        success: false,
+        message: `Akses ditolak: Anda tidak memiliki izin untuk mereview Level ${level}.`
+      });
+    }
+
+    const result = await processApproval(id, user.userId, 'revision', level, 'dashboard', note || 'Diminta revisi oleh reviewer');
+    return reply.status(result.statusCode).send(result);
+  });
+
+  // POST /api/videos/batch-action - Bulk approve or reject videos
+  fastify.post('/batch-action', {
+    preHandler: [fastify.authenticate]
+  }, async (request, reply) => {
+    const { videoIds = [], action, note } = (request.body as { videoIds: string[]; action: 'approve' | 'reject'; note?: string }) || {};
+    const user = request.user as DecodedJwt;
+    const userLevels: number[] = user.levels || [];
+
+    if (!Array.isArray(videoIds) || videoIds.length === 0) {
+      return reply.status(400).send({ success: false, message: 'Daftar videoIds tidak boleh kosong.' });
+    }
+
+    if (action !== 'approve' && action !== 'reject') {
+      return reply.status(400).send({ success: false, message: 'Aksi batch harus berupa approve atau reject.' });
+    }
+
+    const results = [];
+    let successCount = 0;
+    let failedCount = 0;
+
+    for (const vidId of videoIds) {
+      const vRes = await query(`SELECT current_level, status FROM videos WHERE id = $1;`, [vidId]);
+      if (vRes.rows.length === 0) {
+        failedCount++;
+        results.push({ id: vidId, success: false, message: 'Video tidak ditemukan.' });
+        continue;
+      }
+
+      const v = vRes.rows[0];
+      const level = v.current_level;
+
+      if (!userLevels.includes(level)) {
+        failedCount++;
+        results.push({ id: vidId, success: false, message: `Tidak memiliki wewenang untuk Level ${level}.` });
+        continue;
+      }
+
+      const res = await processApproval(vidId, user.userId, action, level, 'dashboard', note || `Batch ${action}`);
+      if (res.success) {
+        successCount++;
+        results.push({ id: vidId, success: true, message: res.message });
+      } else {
+        failedCount++;
+        results.push({ id: vidId, success: false, message: res.message });
+      }
+    }
+
+    return reply.send({
+      success: true,
+      message: `Batch action ${action} selesai: ${successCount} berhasil, ${failedCount} gagal/konflik.`,
+      successCount,
+      failedCount,
+      results
+    });
+  });
+
   // POST /api/videos/generate - Trigger automated AI video pipeline
   fastify.post('/generate', async (request, reply) => {
     const { topic, title, script, platforms = ['youtube', 'instagram'] } = (request.body as GenerateBody) || {};

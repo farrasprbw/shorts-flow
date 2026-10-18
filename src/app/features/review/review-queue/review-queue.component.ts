@@ -8,6 +8,7 @@ import { Video } from '../../../core/models/video.models';
 import { VideoCardComponent } from '../../../shared/components/video-card/video-card.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { ActionButtonComponent } from '../../../shared/components/action-button/action-button.component';
+import { ToastService } from '../../../shared/services/toast.service';
 
 @Component({
   selector: 'app-review-queue',
@@ -50,6 +51,28 @@ import { ActionButtonComponent } from '../../../shared/components/action-button/
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
             </svg>
             <span>{{ isSimulating() ? 'Menguji...' : 'Uji Anti-Race Cond' }}</span>
+          </button>
+
+          <!-- Batch Review Toggle Button -->
+          <button
+            (click)="toggleSelectMode()"
+            class="inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all"
+            [class.border-indigo-600]="isSelectMode()"
+            [class.bg-indigo-50]="isSelectMode()"
+            [class.dark:bg-indigo-950/40]="isSelectMode()"
+            [class.text-indigo-600]="isSelectMode()"
+            [class.dark:text-indigo-400]="isSelectMode()"
+            [class.border-slate-200]="!isSelectMode()"
+            [class.dark:border-slate-700]="!isSelectMode()"
+            [class.bg-white]="!isSelectMode()"
+            [class.dark:bg-slate-800]="!isSelectMode()"
+            [class.text-slate-700]="!isSelectMode()"
+            [class.dark:text-slate-200]="!isSelectMode()"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+            </svg>
+            <span>{{ isSelectMode() ? 'Tutup Pilihan' : 'Pilih Massal' }}</span>
           </button>
 
           <!-- Generate Video Button -->
@@ -175,12 +198,50 @@ import { ActionButtonComponent } from '../../../shared/components/action-button/
           @for (video of videoService.filteredVideos(); track video.id) {
             <app-video-card
               [video]="video"
+              [selectable]="isSelectMode()"
+              [selected]="selectedIds().has(video.id)"
+              (selectToggled)="toggleSelect(video.id)"
               (reviewClicked)="onNavigateToDetail($event)"
             ></app-video-card>
           }
         </div>
       }
     </div>
+
+    <!-- Floating Batch Actions Bar -->
+    @if (selectedIds().size > 0) {
+      <div class="fixed bottom-6 inset-x-4 max-w-xl mx-auto z-50 bg-slate-900/95 text-white p-4 rounded-2xl shadow-2xl border border-slate-700/80 backdrop-blur-md flex items-center justify-between animate-in slide-in-from-bottom-5">
+        <div class="flex items-center space-x-3">
+          <span class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">
+            {{ selectedIds().size }}
+          </span>
+          <span class="text-xs sm:text-sm font-medium">Video Dipilih</span>
+        </div>
+
+        <div class="flex items-center space-x-2">
+          <button
+            (click)="executeBatch('approve')"
+            class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-all shadow-sm flex items-center space-x-1"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            <span>Setujui</span>
+          </button>
+          <button
+            (click)="executeBatch('reject')"
+            class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-all shadow-sm flex items-center space-x-1"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            <span>Tolak</span>
+          </button>
+          <button
+            (click)="clearSelection()"
+            class="px-3 py-2 rounded-xl text-xs text-slate-400 hover:text-white transition-all"
+          >
+            Batal
+          </button>
+        </div>
+      </div>
+    }
 
     <!-- Generate Video AI Modal (Placed outside space-y-6 container) -->
     @if (isGenerateModalOpen()) {
@@ -274,6 +335,7 @@ export class ReviewQueueComponent {
   videoService = inject(VideoService);
   apiService = inject(ApiService);
   router = inject(Router);
+  private toastService = inject(ToastService);
 
   isLoading = signal<boolean>(false);
   isMobileFilterOpen = signal<boolean>(false);
@@ -289,7 +351,7 @@ export class ReviewQueueComponent {
   targetFacebook = false;
 
   hasFilledGenerateForm(): boolean {
-    const hasTopic = this.newTopic.trim().length > 0;
+    const hasTopic = this.newTopic.length > 0;
     const hasPlatform = this.targetYouTube || this.targetInstagram || this.targetTikTok || this.targetFacebook;
     return Boolean(hasTopic && hasPlatform);
   }
@@ -297,6 +359,44 @@ export class ReviewQueueComponent {
   // Race Simulation State
   isSimulating = signal<boolean>(false);
   simulationResult = signal<ConflictSimulationResponse | null>(null);
+
+  // Batch Selection State
+  isSelectMode = signal<boolean>(false);
+  selectedIds = signal<Set<string>>(new Set());
+
+  toggleSelectMode() {
+    this.isSelectMode.set(!this.isSelectMode());
+    if (!this.isSelectMode()) {
+      this.selectedIds.set(new Set());
+    }
+  }
+
+  toggleSelect(id: string) {
+    this.selectedIds.update(set => {
+      const next = new Set(set);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  clearSelection() {
+    this.selectedIds.set(new Set());
+    this.isSelectMode.set(false);
+  }
+
+  async executeBatch(action: 'approve' | 'reject') {
+    const ids = Array.from(this.selectedIds());
+    if (ids.length === 0) return;
+
+    const res = await this.videoService.batchAction(ids, action);
+    if (res.success) {
+      this.toastService.success(res.message);
+    } else {
+      this.toastService.error(res.message);
+    }
+    this.clearSelection();
+  }
 
   isSmallScreen(): boolean {
     return typeof window !== 'undefined' && window.innerWidth < 640;

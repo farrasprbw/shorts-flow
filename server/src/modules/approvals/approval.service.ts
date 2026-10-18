@@ -17,7 +17,7 @@ export interface ApprovalResult {
 export async function processApproval(
   videoId: string,
   userId: string,
-  action: 'approve' | 'reject',
+  action: 'approve' | 'reject' | 'revision',
   expectedLevel: number,
   channel: 'dashboard' | 'telegram' = 'dashboard',
   note: string = ''
@@ -53,6 +53,9 @@ export async function processApproval(
     if (action === 'reject') {
       nextStatus = 'rejected';
       nextLevel = video.current_level;
+    } else if (action === 'revision') {
+      nextStatus = 'needs_revision';
+      nextLevel = video.current_level;
     } else {
       const isFinal = expectedLevel >= video.required_max_level;
       nextStatus = isFinal ? 'approved' : 'pending_review';
@@ -67,7 +70,7 @@ export async function processApproval(
            current_level = $2,
            version = version + 1,
            updated_at = NOW(),
-           rejection_reason = CASE WHEN $3 = 'reject' THEN $4 ELSE rejection_reason END
+           rejection_reason = CASE WHEN $3 IN ('reject', 'revision') THEN $4 ELSE rejection_reason END
        WHERE id = $5
          AND status = 'pending_review'
          AND current_level = $6

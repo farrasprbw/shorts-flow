@@ -29,6 +29,21 @@ import { ActionButtonComponent } from '../action-button/action-button.component'
           <div class="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-slate-900/80 backdrop-blur-xs text-[11px] font-medium text-white flex items-center space-x-1 shadow-sm">
             <span>Level {{ video().currentLevel }}</span>
           </div>
+
+          <!-- Select Checkbox for Batch Review -->
+          @if (selectable()) {
+            <label
+              (click)="$event.stopPropagation()"
+              class="absolute top-2 right-2 w-6 h-6 rounded-md bg-black/60 backdrop-blur-xs flex items-center justify-center cursor-pointer border border-white/20 z-10 hover:bg-black/80 transition-all"
+            >
+              <input
+                type="checkbox"
+                [checked]="selected()"
+                (change)="selectToggled.emit(!selected())"
+                class="rounded text-red-600 focus:ring-red-500 w-4 h-4 cursor-pointer"
+              />
+            </label>
+          }
         </div>
 
         <!-- Video Title -->
@@ -89,7 +104,10 @@ import { ActionButtonComponent } from '../action-button/action-button.component'
 })
 export class VideoCardComponent {
   video = input.required<Video>();
+  selectable = input<boolean>(false);
+  selected = input<boolean>(false);
   reviewClicked = output<Video>();
+  selectToggled = output<boolean>();
 
   onReview() {
     this.reviewClicked.emit(this.video());

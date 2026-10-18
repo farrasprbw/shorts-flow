@@ -20,6 +20,12 @@ import { VideoStatus } from '../../../core/models/video.models';
           Menunggu Review
         </span>
       }
+      @case ('needs_revision') {
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800">
+          <span class="w-1.5 h-1.5 rounded-full bg-orange-500 mr-1.5"></span>
+          Perlu Revisi
+        </span>
+      }
       @case ('approved') {
         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>

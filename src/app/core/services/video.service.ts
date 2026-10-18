@@ -199,6 +199,52 @@ export class VideoService {
     }
   }
 
+  async requestRevision(id: string, note: string): Promise<{ success: boolean; message: string }> {
+    const currentUser = this.authService.currentUser();
+    const video = this.getVideoById(id);
+
+    if (!video || !currentUser) {
+      return { success: false, message: 'Video atau user tidak ditemukan.' };
+    }
+
+    if (video.lockedBy) {
+      return {
+        success: false,
+        message: `Aksi ditolak: Video sudah diproses oleh ${video.lockedBy.userName}.`
+      };
+    }
+
+    if (!this.authService.canApproveAtLevel(video.currentLevel)) {
+      return { success: false, message: `User tidak memiliki hak akses reviewer Level ${video.currentLevel}.` };
+    }
+
+    try {
+      const apiRes = await this.apiService.requestRevision(id, video.currentLevel, note);
+      if (apiRes && apiRes.success) {
+        await this.loadFromApi();
+        return { success: true, message: apiRes.message || 'Permintaan revisi berhasil dikirim.' };
+      }
+      return { success: false, message: apiRes?.message || 'Gagal mengirim permintaan revisi.' };
+    } catch (err: unknown) {
+      const httpErr = err as { status?: number; error?: { message?: string } };
+      if (httpErr?.status === 409) {
+        return { success: false, message: `⚠️ ${httpErr.error?.message || 'Konflik terdeteksi.'}` };
+      }
+      return { success: false, message: httpErr?.error?.message || 'Gagal memproses revisi di server.' };
+    }
+  }
+
+  async batchAction(videoIds: string[], action: 'approve' | 'reject', note?: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const res = await this.apiService.batchActionVideos(videoIds, action, note);
+      await this.loadFromApi();
+      return { success: res.success, message: res.message };
+    } catch (err: unknown) {
+      const httpErr = err as { error?: { message?: string } };
+      return { success: false, message: httpErr?.error?.message || 'Gagal memproses aksi batch.' };
+    }
+  }
+
   // Simulate a concurrent action from another reviewer to test anti-race condition UI
   simulateRaceCondition(id: string) {
     const current = this.authService.currentUser();

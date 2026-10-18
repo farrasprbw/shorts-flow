@@ -121,6 +121,26 @@ export class ApiService {
     );
   }
 
+  async requestRevision(id: string, level: number, note: string): Promise<ApiResponse<Video>> {
+    return firstValueFrom(
+      this.http.post<ApiResponse<Video>>(
+        `${this.baseUrl}/videos/${id}/revision`,
+        { level, note },
+        { headers: this.getAuthHeaders() }
+      )
+    );
+  }
+
+  async batchActionVideos(videoIds: string[], action: 'approve' | 'reject', note?: string): Promise<{ success: boolean; message: string; successCount: number; failedCount: number }> {
+    return firstValueFrom(
+      this.http.post<{ success: boolean; message: string; successCount: number; failedCount: number }>(
+        `${this.baseUrl}/videos/batch-action`,
+        { videoIds, action, note },
+        { headers: this.getAuthHeaders() }
+      )
+    );
+  }
+
   async generateVideo(data: { topic?: string; title?: string; script?: string; platforms?: string[] }): Promise<ApiResponse<Video>> {
     return firstValueFrom(
       this.http.post<ApiResponse<Video>>(`${this.baseUrl}/videos/generate`, data, {

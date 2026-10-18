@@ -34,6 +34,13 @@ export class AnalyticsService {
       delta: '0',
       isPositive: true,
       sublabel: 'diskusi pada video'
+    },
+    {
+      title: 'Avg Engagement Rate',
+      value: '0.0%',
+      delta: '0%',
+      isPositive: true,
+      sublabel: 'rasio likes & komentar per views'
     }
   ]);
 

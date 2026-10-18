@@ -1,0 +1,11 @@
+node_modules
+.angular
+dist
+.git
+.vscode
+server/node_modules
+server/dist
+server/storage
+*.log
+planning
+.env

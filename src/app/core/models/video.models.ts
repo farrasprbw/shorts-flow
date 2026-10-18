@@ -1,6 +1,7 @@
 export type VideoStatus =
   | 'draft'
   | 'pending_review'
+  | 'needs_revision'
   | 'approved'
   | 'rejected'
   | 'scheduled'
@@ -15,7 +16,7 @@ export interface ApprovalLog {
   userName: string;
   userRole: string;
   level: number;
-  action: 'approve' | 'reject';
+  action: 'approve' | 'reject' | 'revision';
   channel: 'dashboard' | 'telegram';
   note?: string;
   createdAt: string;

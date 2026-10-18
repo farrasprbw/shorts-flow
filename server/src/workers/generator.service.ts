@@ -95,7 +95,10 @@ export async function renderShortsVideo(params: {
   const relCaptionFile = path.relative(process.cwd(), tempCaptionFile).replace(/\\/g, '/');
   const relAudioFile = path.relative(process.cwd(), tempAudioFile).replace(/\\/g, '/');
 
-  const ffmpegBin = (ffmpegPath as { default?: string })?.default || (ffmpegPath as string);
+  const rawFfmpeg = ffmpegPath as unknown;
+  const ffmpegBin = (typeof rawFfmpeg === 'object' && rawFfmpeg !== null && 'default' in rawFfmpeg)
+    ? (rawFfmpeg as { default: string }).default
+    : (rawFfmpeg as string);
 
   if (!ffmpegBin || !fs.existsSync(ffmpegBin)) {
     throw new Error(`FFmpeg binary tidak ditemukan pada: ${ffmpegBin}`);

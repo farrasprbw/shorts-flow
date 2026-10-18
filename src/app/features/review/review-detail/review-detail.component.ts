@@ -187,12 +187,18 @@ import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/
                         class="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5"
                         [class.bg-emerald-100]="log.action === 'approve'"
                         [class.text-emerald-600]="log.action === 'approve'"
+                        [class.bg-amber-100]="log.action === 'revision'"
+                        [class.text-amber-600]="log.action === 'revision'"
                         [class.bg-rose-100]="log.action === 'reject'"
                         [class.text-rose-600]="log.action === 'reject'"
                       >
                         @if (log.action === 'approve') {
                           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                          </svg>
+                        } @else if (log.action === 'revision') {
+                          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                           </svg>
                         } @else {
                           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -296,6 +302,19 @@ import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/
                   </span>
                 </app-action-button>
 
+                <!-- Request Revision Button -->
+                <button
+                  type="button"
+                  [disabled]="isActionDisabled()"
+                  (click)="openConfirmModal('revision')"
+                  class="w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-300/40 dark:border-amber-700/40 transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                  </svg>
+                  <span>Minta Revisi (Feedback)</span>
+                </button>
+
                 <!-- Reject Button -->
                 <app-action-button
                   variant="danger"
@@ -336,14 +355,17 @@ import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/
         </div>
       </div>
 
-      <!-- Confirm Modal -->
+      <!-- Confirm Modal with note input -->
       <app-confirm-modal
         [isOpen]="isModalOpen()"
         [title]="modalTitle()"
         [message]="modalMessage()"
         [confirmLabel]="modalConfirmLabel()"
         [variant]="modalVariant()"
-        (confirmed)="onExecuteAction()"
+        [showInput]="modalShowInput()"
+        [inputLabel]="modalInputLabel()"
+        [inputPlaceholder]="modalInputPlaceholder()"
+        (confirmed)="onExecuteAction($event)"
         (cancelled)="isModalOpen.set(false)"
       ></app-confirm-modal>
     } @else {
@@ -374,27 +396,51 @@ export class ReviewDetailComponent implements OnInit {
 
   // Modal state
   isModalOpen = signal<boolean>(false);
-  pendingAction = signal<'approve' | 'reject'>('approve');
+  pendingAction = signal<'approve' | 'reject' | 'revision'>('approve');
 
-  modalTitle = computed(() =>
-    this.pendingAction() === 'approve' ? 'Konfirmasi Persetujuan Video' : 'Konfirmasi Penolakan Video'
-  );
+  modalTitle = computed(() => {
+    if (this.pendingAction() === 'approve') return 'Konfirmasi Persetujuan Video';
+    if (this.pendingAction() === 'revision') return 'Kirim Permintaan Revisi Video';
+    return 'Konfirmasi Penolakan Video';
+  });
 
   modalMessage = computed(() => {
     const v = this.video();
     if (!v) return '';
-    return this.pendingAction() === 'approve'
-      ? `Apakah Anda yakin menyetujui video "${v.title}" untuk tahap ${v.currentLevel >= v.requiredMaxLevel ? 'publikasi final' : 'Level ' + (v.currentLevel + 1)}?`
-      : `Apakah Anda yakin ingin menolak video "${v.title}"? Status akan berubah menjadi Ditolak.`;
+    if (this.pendingAction() === 'approve') {
+      return `Apakah Anda yakin menyetujui video "${v.title}" untuk tahap ${v.currentLevel >= v.requiredMaxLevel ? 'publikasi final' : 'Level ' + (v.currentLevel + 1)}?`;
+    }
+    if (this.pendingAction() === 'revision') {
+      return `Tuliskan catatan perbaikan atau feedback untuk video "${v.title}". Status video akan ditandai Perlu Revisi.`;
+    }
+    return `Apakah Anda yakin ingin menolak video "${v.title}"? Status akan berubah menjadi Ditolak.`;
   });
 
-  modalConfirmLabel = computed(() =>
-    this.pendingAction() === 'approve' ? 'Ya, Setujui' : 'Ya, Tolak'
-  );
+  modalConfirmLabel = computed(() => {
+    if (this.pendingAction() === 'approve') return 'Ya, Setujui';
+    if (this.pendingAction() === 'revision') return 'Kirim Catatan Revisi';
+    return 'Ya, Tolak';
+  });
 
-  modalVariant = computed<'success' | 'danger'>(() =>
-    this.pendingAction() === 'approve' ? 'success' : 'danger'
-  );
+  modalVariant = computed<'success' | 'danger' | 'warning'>(() => {
+    if (this.pendingAction() === 'approve') return 'success';
+    if (this.pendingAction() === 'revision') return 'warning';
+    return 'danger';
+  });
+
+  modalShowInput = computed<boolean>(() => {
+    return this.pendingAction() === 'revision' || this.pendingAction() === 'reject';
+  });
+
+  modalInputLabel = computed<string>(() => {
+    return this.pendingAction() === 'revision' ? 'Catatan Perbaikan (Wajib)' : 'Alasan Penolakan (Opsional)';
+  });
+
+  modalInputPlaceholder = computed<string>(() => {
+    return this.pendingAction() === 'revision'
+      ? 'Contoh: Ubah hook naskah di 3 detik awal, perbaiki typo pada teks judul...'
+      : 'Tuliskan alasan penolakan jika diperlukan...';
+  });
 
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
@@ -420,26 +466,34 @@ export class ReviewDetailComponent implements OnInit {
     return !this.canReviewCurrentLevel();
   }
 
-  openConfirmModal(action: 'approve' | 'reject') {
+  openConfirmModal(action: 'approve' | 'reject' | 'revision') {
     this.pendingAction.set(action);
     this.isModalOpen.set(true);
   }
 
-  async onExecuteAction() {
+  async onExecuteAction(note?: string) {
     this.isModalOpen.set(false);
     const v = this.video();
     if (!v) return;
 
     if (this.pendingAction() === 'approve') {
-      const result = await this.videoService.approveVideo(v.id);
+      const result = await this.videoService.approveVideo(v.id, note);
       if (result.success) {
         this.toastService.success(result.message);
         this.router.navigate(['/review']);
       } else {
         this.toastService.error(result.message);
       }
+    } else if (this.pendingAction() === 'revision') {
+      const result = await this.videoService.requestRevision(v.id, note || 'Perlu revisi naskah/konten');
+      if (result.success) {
+        this.toastService.warning(result.message);
+        this.router.navigate(['/review']);
+      } else {
+        this.toastService.error(result.message);
+      }
     } else {
-      const result = await this.videoService.rejectVideo(v.id, 'Ditolak via web dashboard');
+      const result = await this.videoService.rejectVideo(v.id, note || 'Ditolak via web dashboard');
       if (result.success) {
         this.toastService.error(result.message);
         this.router.navigate(['/review']);

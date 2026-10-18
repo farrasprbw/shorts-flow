@@ -170,7 +170,7 @@ export async function sendVideoReviewToTelegram(
 export async function syncTelegramCardFromDashboard(
   videoId: string,
   level: number,
-  action: 'approve' | 'reject',
+  action: 'approve' | 'reject' | 'revision',
   userName: string
 ) {
   if (!bot) return;
@@ -181,6 +181,8 @@ export async function syncTelegramCardFromDashboard(
 
   const statusText = action === 'approve'
     ? `✅ <b>Disetujui via Web Dashboard oleh ${userName}</b> pada ${new Date().toLocaleTimeString('id-ID')}`
+    : action === 'revision'
+    ? `⚠️ <b>Diminta Revisi via Web Dashboard oleh ${userName}</b> pada ${new Date().toLocaleTimeString('id-ID')}`
     : `❌ <b>Ditolak via Web Dashboard oleh ${userName}</b> pada ${new Date().toLocaleTimeString('id-ID')}`;
 
   for (const card of cards) {

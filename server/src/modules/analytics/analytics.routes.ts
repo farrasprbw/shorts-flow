@@ -49,6 +49,14 @@ export const analyticsRoutes: FastifyPluginAsync = async (fastify: FastifyInstan
         delta: liveComments > 0 ? `+${liveComments}` : '0',
         isPositive: liveComments > 0,
         sublabel: 'diskusi pada video'
+      },
+      {
+        title: 'Avg Engagement Rate',
+        value: liveViews > 0 ? `${(((liveLikes + liveComments) / liveViews) * 100).toFixed(1)}%` : '0.0%',
+        unit: '',
+        delta: (liveLikes + liveComments) > 0 ? 'Aktif' : '0%',
+        isPositive: (liveLikes + liveComments) > 0,
+        sublabel: 'rasio likes & komentar per views'
       }
     ];
 

@@ -1,7 +1,7 @@
 import { Component, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-export type ButtonVariant = 'primary' | 'success' | 'danger' | 'ghost' | 'secondary';
+export type ButtonVariant = 'primary' | 'success' | 'danger' | 'ghost' | 'secondary' | 'warning';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 @Component({
@@ -55,6 +55,7 @@ export class ActionButtonComponent {
       primary: 'bg-indigo-600 hover:bg-indigo-700 text-white focus:ring-indigo-500 shadow-sm',
       success: 'bg-emerald-600 hover:bg-emerald-700 text-white focus:ring-emerald-500 shadow-sm',
       danger: 'bg-rose-600 hover:bg-rose-700 text-white focus:ring-rose-500 shadow-sm',
+      warning: 'bg-amber-500 hover:bg-amber-600 text-white focus:ring-amber-500 shadow-sm',
       ghost: 'bg-transparent hover:bg-slate-100 text-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-600',
       secondary: 'bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-white'
     }[this.variant()];
