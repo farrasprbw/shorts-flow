@@ -282,7 +282,7 @@ export const videoRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) 
     const { videoGenerationQueue } = await import('../../workers/index.js');
 
     const job = await videoGenerationQueue.add('generate-video', {
-      topic: topic || 'Inovasi AI & Cloud 2026',
+      topic: topic || 'Inovasi & Teknologi 2026',
       title,
       script,
       platforms
@@ -290,7 +290,7 @@ export const videoRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) 
 
     return reply.status(202).send({
       success: true,
-      message: 'Job pembuatan video AI telah masuk antrian BullMQ & sedang diproses.',
+      message: 'Job pembuatan video telah masuk antrian BullMQ & sedang diproses.',
       jobId: job.id
     });
   });

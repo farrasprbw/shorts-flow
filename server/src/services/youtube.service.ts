@@ -17,6 +17,7 @@ export function getAuthUrl(): string {
     access_type: 'offline',
     prompt: 'consent',
     scope: [
+      'https://www.googleapis.com/auth/youtube',
       'https://www.googleapis.com/auth/youtube.upload',
       'https://www.googleapis.com/auth/youtube.readonly'
     ]
@@ -92,20 +93,30 @@ export async function uploadToYouTubeShorts(params: {
 
   const youtube = google.youtube({ version: 'v3', auth: oauth2Client });
 
-  let title = params.title;
-  if (!title.toLowerCase().includes('#shorts')) {
-    title = `${title} #Shorts`;
+  let cleanTitle = params.title.replace(/\bAI\b/gi, '').replace(/\s{2,}/g, ' ').trim();
+  if (!cleanTitle.toLowerCase().includes('#shorts')) {
+    cleanTitle = `${cleanTitle} #Shorts`;
   }
 
-  console.log(`[YouTube Service] Mengupload video vertikal ke YouTube Shorts: "${title}"...`);
+  const cleanDescription = (params.description || '')
+    .replace(/\bAI\b/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+
+  const rawTags = params.tags && params.tags.length > 0 
+    ? params.tags 
+    : ['shorts', 'video', 'trending', 'shortsflow'];
+  const cleanTags = rawTags.filter(t => t.toLowerCase() !== 'ai' && !t.toLowerCase().includes('artificial intelligence'));
+
+  console.log(`[YouTube Service] Mengupload video vertikal ke YouTube Shorts: "${cleanTitle}"...`);
 
   const res = await youtube.videos.insert({
     part: ['snippet', 'status'],
     requestBody: {
       snippet: {
-        title: title.slice(0, 100),
-        description: `${params.description}\n\n#Shorts #ShortsFlow #AI`,
-        tags: params.tags || ['shorts', 'ai', 'video'],
+        title: cleanTitle.slice(0, 100),
+        description: `${cleanDescription}\n\n#Shorts #ShortsFlow`,
+        tags: cleanTags,
         categoryId: '28' // Science & Technology
       },
       status: {

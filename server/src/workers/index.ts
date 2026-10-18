@@ -19,7 +19,7 @@ export const videoGenerationWorker = new Worker(
   async (job: Job) => {
     console.log(`[Worker] Memulai job produksi video #${job.id}:`, job.data);
     const {
-      topic = 'Teknologi AI 2026',
+      topic = 'Inovasi Teknologi 2026',
       title: inputTitle,
       script: inputScript,
       platforms = ['youtube', 'instagram']
@@ -118,7 +118,7 @@ export const videoPublishingWorker = new Worker(
             console.log(`[Worker: Publisher] File MP4 belum ditemukan di ${storageVideoPath}, merender video sekarang...`);
             await renderShortsVideo({
               id: videoId,
-              title: video?.title || 'ShortsFlow AI Video',
+              title: video?.title || 'ShortsFlow Video',
               script: video?.script || 'Video otomatis dari ShortsFlow'
             });
           }
@@ -126,8 +126,8 @@ export const videoPublishingWorker = new Worker(
           const { uploadToYouTubeShorts } = await import('../services/youtube.service.js');
           const ytResult = await uploadToYouTubeShorts({
             videoFilePath: storageVideoPath,
-            title: video?.title || 'ShortsFlow AI Video',
-            description: video?.script || 'Video diunggah otomatis oleh ShortsFlow AI workflow.',
+            title: video?.title || 'ShortsFlow Video',
+            description: video?.script || 'Video diunggah otomatis oleh ShortsFlow workflow.',
             privacyStatus: 'public'
           });
 
@@ -143,7 +143,7 @@ export const videoPublishingWorker = new Worker(
               `🎉 <b>Video Berhasil Diunggah ke YouTube Shorts!</b>\n\n` +
               `📌 <b>Judul:</b> ${video?.title || 'ShortsFlow Video'}\n` +
               `📺 <b>Tonton:</b> <a href="${publishedUrl}">${publishedUrl}</a>\n\n` +
-              `<i>Status: Unlisted (Bisa diubah ke Public di YouTube Studio)</i>`,
+              `<i>Status: Public</i>`,
               { parse_mode: 'HTML' }
             );
           }
