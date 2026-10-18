@@ -477,8 +477,10 @@ export class ReviewQueueComponent {
     if (this.targetTikTok) platforms.push('tiktok');
     if (this.targetFacebook) platforms.push('facebook');
 
+    const topicName = this.newTopic;
+
     try {
-      await this.apiService.generateVideo({
+      const res = await this.apiService.generateVideo({
         topic: this.newTopic,
         script: this.newScript || undefined,
         platforms,
@@ -486,13 +488,65 @@ export class ReviewQueueComponent {
         isForKids: this.isForKids
       });
 
-      // Close modal and wait briefly for worker to complete render
+      const jobId = res?.jobId;
+
+      // Close modal and reset form
       this.isGenerateModalOpen.set(false);
-      setTimeout(async () => {
-        await this.videoService.loadFromApi();
-      }, 2500);
+      this.newTopic = '';
+      this.newScript = '';
+      this.isForKids = false;
+
+      this.toastService.show(
+        `Video "${topicName}" sedang dirender oleh worker FFmpeg & footage Pixabay...`,
+        'info'
+      );
+
+      // Active polling until BullMQ worker completes
+      let completed = false;
+      let attempts = 0;
+      const maxAttempts = 25; // 25 * 1.5s = ~37s
+
+      while (!completed && attempts < maxAttempts) {
+        await new Promise(r => setTimeout(r, 1500));
+        attempts++;
+
+        try {
+          if (jobId) {
+            const jobStatus = await this.apiService.getJobStatus(jobId);
+            if (jobStatus.state === 'completed') {
+              completed = true;
+              await this.videoService.loadFromApi();
+              this.toastService.show(
+                `Video "${topicName}" selesai diproduksi & langsung muncul di antrian.`,
+                'success'
+              );
+              break;
+            } else if (jobStatus.state === 'failed') {
+              this.toastService.show(
+                jobStatus.failedReason || 'Terjadi kesalahan saat rendering FFmpeg.',
+                'error'
+              );
+              break;
+            }
+          }
+
+          // Polling refresh directly every 3s
+          if (attempts % 2 === 0) {
+            await this.videoService.loadFromApi();
+          }
+        } catch {
+          await this.videoService.loadFromApi();
+        }
+      }
+
+      // Final synchronization
+      await this.videoService.loadFromApi();
     } catch (err) {
       console.error('Video generation error:', err);
+      this.toastService.show(
+        'Gagal Memulai Produksi: tidak dapat menghubungi backend.',
+        'error'
+      );
     } finally {
       this.isGenerating.set(false);
     }

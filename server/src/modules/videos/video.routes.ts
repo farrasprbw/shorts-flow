@@ -417,6 +417,30 @@ export const videoRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) 
     });
   });
 
+  // GET /api/videos/jobs/:jobId - Track BullMQ video generation job progress
+  fastify.get('/jobs/:jobId', async (request, reply) => {
+    const { jobId } = request.params as { jobId: string };
+    const { videoGenerationQueue } = await import('../../workers/index.js');
+    const job = await videoGenerationQueue.getJob(jobId);
+
+    if (!job) {
+      return reply.status(404).send({
+        success: false,
+        message: 'Job tidak ditemukan atau telah kedaluwarsa.'
+      });
+    }
+
+    const state = await job.getState();
+    return reply.send({
+      success: true,
+      jobId: job.id,
+      state,
+      result: job.returnvalue || null,
+      failedReason: job.failedReason || null
+    });
+  });
+
+
   // POST /api/videos/simulate-conflict - Live race condition simulation
   fastify.post('/simulate-conflict', async (request, reply) => {
     const { videoId: targetId } = (request.body as SimulateBody) || {};

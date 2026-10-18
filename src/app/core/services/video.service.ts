@@ -12,6 +12,19 @@ export class VideoService {
 
   constructor() {
     this.loadFromApi();
+    this.startAutoRefresh();
+  }
+
+  private pollInterval?: ReturnType<typeof setInterval>;
+
+  private startAutoRefresh() {
+    if (typeof window !== 'undefined') {
+      this.pollInterval = setInterval(() => {
+        if (typeof document !== 'undefined' && !document.hidden) {
+          this.loadFromApi();
+        }
+      }, 10000);
+    }
   }
 
   async loadFromApi() {
@@ -55,17 +68,21 @@ export class VideoService {
     return this._videos().filter(video => {
       // Strict role-level filtering:
       // Reviewer Level 1 (Michael) ONLY sees Level 1 videos!
-      // Reviewer Level 2 (Farras / Sarah) ONLY sees Level 2 videos!
+      // Reviewer Level 2 (Sarah) ONLY sees Level 2 videos!
+      // Admin (Farras) can see all tiers!
+      const isAdmin = curUser?.roles.includes('admin');
       const isL1 = curUser?.roles.includes('reviewer_level_1');
       const isL2 = curUser?.roles.includes('reviewer_level_2');
 
-      if (isL1 && !isL2) {
-        if (video.currentLevel !== 1) {
-          return false;
-        }
-      } else if (isL2 && !isL1) {
-        if (video.currentLevel !== 2) {
-          return false;
+      if (!isAdmin) {
+        if (isL1 && !isL2) {
+          if (video.currentLevel !== 1) {
+            return false;
+          }
+        } else if (isL2 && !isL1) {
+          if (video.currentLevel !== 2) {
+            return false;
+          }
         }
       }
 

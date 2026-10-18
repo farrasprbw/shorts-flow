@@ -17,5 +17,9 @@ export const env = {
   YOUTUBE_CLIENT_ID: process.env.YOUTUBE_CLIENT_ID || '',
   YOUTUBE_CLIENT_SECRET: process.env.YOUTUBE_CLIENT_SECRET || '',
   YOUTUBE_REDIRECT_URI: process.env.YOUTUBE_REDIRECT_URI || 'http://localhost:3000/oauth2callback',
-  YOUTUBE_REFRESH_TOKEN: process.env.YOUTUBE_REFRESH_TOKEN || ''
+  YOUTUBE_REFRESH_TOKEN: process.env.YOUTUBE_REFRESH_TOKEN || '',
+  PIXABAY_API_KEY: process.env.PIXABAY_API_KEY || '',
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY || ''
 };
+
+

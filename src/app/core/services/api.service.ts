@@ -55,6 +55,15 @@ export interface ConflictSimulationResponse {
   message?: string;
 }
 
+export interface JobStatusResponse {
+  success: boolean;
+  jobId: string;
+  state: 'waiting' | 'active' | 'completed' | 'failed';
+  result?: { success: boolean; videoId: string; media: unknown };
+  failedReason?: string;
+  message?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -148,9 +157,19 @@ export class ApiService {
     platforms?: string[];
     category?: string;
     isForKids?: boolean;
-  }): Promise<ApiResponse<Video>> {
+  }): Promise<{ success: boolean; message: string; jobId?: string; data?: Video }> {
     return firstValueFrom(
-      this.http.post<ApiResponse<Video>>(`${this.baseUrl}/videos/generate`, data, {
+      this.http.post<{ success: boolean; message: string; jobId?: string; data?: Video }>(
+        `${this.baseUrl}/videos/generate`,
+        data,
+        { headers: this.getAuthHeaders() }
+      )
+    );
+  }
+
+  async getJobStatus(jobId: string): Promise<JobStatusResponse> {
+    return firstValueFrom(
+      this.http.get<JobStatusResponse>(`${this.baseUrl}/videos/jobs/${jobId}`, {
         headers: this.getAuthHeaders()
       })
     );

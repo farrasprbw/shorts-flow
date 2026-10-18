@@ -27,9 +27,20 @@ export const videoGenerationWorker = new Worker(
       isForKids = false
     } = job.data;
 
-    // Step 1: Content / LLM script
-    const title = inputTitle || `Fakta Menarik: ${topic} yang Mengubah Dunia`;
-    const script = inputScript || `Tahukah kamu tentang ${topic}? Banyak yang mengira ini biasa saja, padahal di baliknya tersimpan rahasia besar yang mengubah cara kerja kita. Simak sampai habis!`;
+    // Step 1: Intelligent & Factual Script Generation
+    const { generateInformativeScript } = await import('../services/script.service.js');
+    const scriptResult = await generateInformativeScript({
+      topic,
+      category,
+      isForKids,
+      userTitle: inputTitle,
+      userScript: inputScript
+    });
+
+    const title = scriptResult.title;
+    const script = scriptResult.script;
+    console.log(`[Worker] 📝 Naskah informatif siap (${scriptResult.source}): "${title}"`);
+    console.log(`[Worker] Isi naskah: "${script}"`);
     const videoId = 'vid-' + Math.random().toString(36).substring(2, 10);
 
     // Step 2 & 3: Render actual 9:16 vertical video via FFmpeg with real B-roll motion
