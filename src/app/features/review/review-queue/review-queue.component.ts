@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -254,7 +254,7 @@ import { ActionButtonComponent } from '../../../shared/components/action-button/
             </button>
             <button
               (click)="submitGenerateVideo()"
-              [disabled]="isGenerating() || !newTopic || (!targetYouTube || !targetInstagram || !targetTikTok || !targetFacebook)"
+              [disabled]="isGenerating() || !hasFilledGenerateForm()"
               class="px-5 py-2 rounded-xl text-xs font-semibold bg-red-600 hover:bg-red-700 text-white shadow-sm transition-all disabled:opacity-50 flex items-center space-x-2"
             >
               @if (isGenerating()) {
@@ -288,6 +288,12 @@ export class ReviewQueueComponent {
   targetTikTok = false;
   targetFacebook = false;
 
+  hasFilledGenerateForm(): boolean {
+    const hasTopic = this.newTopic.trim().length > 0;
+    const hasPlatform = this.targetYouTube || this.targetInstagram || this.targetTikTok || this.targetFacebook;
+    return Boolean(hasTopic && hasPlatform);
+  }
+
   // Race Simulation State
   isSimulating = signal<boolean>(false);
   simulationResult = signal<ConflictSimulationResponse | null>(null);
@@ -320,7 +326,7 @@ export class ReviewQueueComponent {
   }
 
   async submitGenerateVideo() {
-    if (!this.newTopic || (!this.targetYouTube || !this.targetInstagram || !this.targetTikTok || !this.targetFacebook)) return;
+    if (!this.hasFilledGenerateForm()) return;
 
     this.isGenerating.set(true);
     const platforms: string[] = [];
