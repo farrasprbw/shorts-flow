@@ -67,7 +67,7 @@ export const videoRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) 
     }
 
     let sql = `
-      SELECT v.id, v.title, v.script, v.thumbnail_url, v.duration_seconds,
+      SELECT v.id, v.title, v.script, v.video_url, v.thumbnail_url, v.duration_seconds,
              v.platform_targets, v.status, v.current_level, v.required_max_level,
              v.created_at, v.updated_at
       FROM videos v
@@ -119,6 +119,7 @@ export const videoRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) 
         id: r.id,
         title: r.title,
         script: r.script,
+        videoUrl: r.video_url,
         thumbnailUrl: r.thumbnail_url,
         durationSeconds: parseFloat(r.duration_seconds || '45'),
         platforms: r.platform_targets,

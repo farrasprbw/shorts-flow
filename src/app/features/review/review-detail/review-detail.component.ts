@@ -96,44 +96,30 @@ import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/
             <!-- 9:16 Video Player Container -->
             <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-6 border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex flex-col items-center">
               <div class="w-full max-w-sm">
-                <!-- 9:16 Player Simulation -->
-                <div class="relative aspect-[9/16] w-full rounded-2xl overflow-hidden bg-slate-950 shadow-2xl flex items-center justify-center group border border-slate-800">
-                  <img
-                    [src]="v.thumbnailUrl"
-                    [alt]="v.title"
-                    class="absolute inset-0 w-full h-full object-cover opacity-80"
-                  />
-                  <!-- Dark Gradient Vignette for vertical video aesthetics -->
-                  <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40"></div>
-
-                  <!-- Play/Pause Simulation Overlay -->
-                  <button
-                    (click)="isPlaying.set(!isPlaying())"
-                    class="relative z-10 w-16 h-16 rounded-full bg-indigo-600/90 text-white flex items-center justify-center shadow-xl hover:scale-110 hover:bg-indigo-500 transition-all duration-200 backdrop-blur-xs"
-                  >
-                    @if (isPlaying()) {
-                      <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
-                      </svg>
-                    } @else {
-                      <svg class="w-7 h-7 ml-1" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z"/>
-                      </svg>
-                    }
-                  </button>
-
-                  <!-- Video Duration & Audio Info Overlay -->
-                  <div class="absolute bottom-4 inset-x-4 flex items-center justify-between text-white text-xs">
-                    <span class="font-mono bg-black/60 px-2 py-1 rounded backdrop-blur-xs">
-                      {{ isPlaying() ? '0:24' : '0:00' }} / 0:{{ v.durationSeconds }}s
-                    </span>
-                    <span class="bg-indigo-600/80 px-2 py-1 rounded backdrop-blur-xs flex items-center space-x-1">
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z"></path>
-                      </svg>
-                      <span>Kokoro TTS (ID)</span>
-                    </span>
-                  </div>
+                <!-- 9:16 Real HTML5 Player -->
+                <div class="relative aspect-[9/16] w-full rounded-2xl overflow-hidden bg-slate-950 shadow-2xl flex items-center justify-center border border-slate-800">
+                  @if (v.videoUrl) {
+                    <video
+                      #videoElement
+                      [src]="v.videoUrl"
+                      [poster]="v.thumbnailUrl"
+                      controls
+                      playsinline
+                      preload="auto"
+                      class="w-full h-full object-cover"
+                      (play)="isPlaying.set(true)"
+                      (pause)="isPlaying.set(false)"
+                    ></video>
+                  } @else {
+                    <img
+                      [src]="v.thumbnailUrl"
+                      [alt]="v.title"
+                      class="w-full h-full object-cover opacity-80"
+                    />
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 flex items-center justify-center">
+                      <span class="text-xs text-white bg-black/60 px-3 py-1.5 rounded-xl">File video belum tersedia</span>
+                    </div>
+                  }
                 </div>
               </div>
             </div>
@@ -415,6 +401,7 @@ export class ReviewDetailComponent implements OnInit {
       const id = params.get('id');
       if (id) {
         this.videoId.set(id);
+        this.videoService.fetchVideoById(id);
       }
     });
   }

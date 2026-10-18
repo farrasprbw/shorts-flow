@@ -254,7 +254,7 @@ import { ActionButtonComponent } from '../../../shared/components/action-button/
             </button>
             <button
               (click)="submitGenerateVideo()"
-              [disabled]="isGenerating() || !newTopic"
+              [disabled]="isGenerating() || !newTopic || (!targetYouTube || !targetInstagram || !targetTikTok || !targetFacebook)"
               class="px-5 py-2 rounded-xl text-xs font-semibold bg-red-600 hover:bg-red-700 text-white shadow-sm transition-all disabled:opacity-50 flex items-center space-x-2"
             >
               @if (isGenerating()) {
@@ -281,10 +281,10 @@ export class ReviewQueueComponent {
   // Generate Modal & Form State
   isGenerateModalOpen = signal<boolean>(false);
   isGenerating = signal<boolean>(false);
-  newTopic = '5 Trik Rahasia Coding Cepat dengan AI di 2026';
+  newTopic = '';
   newScript = '';
-  targetYouTube = true;
-  targetInstagram = true;
+  targetYouTube = false;
+  targetInstagram = false;
   targetTikTok = false;
   targetFacebook = false;
 
@@ -320,7 +320,7 @@ export class ReviewQueueComponent {
   }
 
   async submitGenerateVideo() {
-    if (!this.newTopic) return;
+    if (!this.newTopic || (!this.targetYouTube || !this.targetInstagram || !this.targetTikTok || !this.targetFacebook)) return;
 
     this.isGenerating.set(true);
     const platforms: string[] = [];

@@ -100,6 +100,28 @@ export class VideoService {
     return this._videos().find(v => v.id === id);
   }
 
+  async fetchVideoById(id: string): Promise<Video | undefined> {
+    try {
+      const res = await this.apiService.getVideoById(id);
+      if (res && res.success && res.data) {
+        const v = res.data;
+        this._videos.update(items => {
+          const idx = items.findIndex(item => item.id === id);
+          if (idx >= 0) {
+            const next = [...items];
+            next[idx] = v;
+            return next;
+          }
+          return [v, ...items];
+        });
+        return v;
+      }
+    } catch (err) {
+      console.warn('[VideoService] Cannot fetch video detail:', err);
+    }
+    return this.getVideoById(id);
+  }
+
   /**
    * Multi-tier approval logic:
    * Level 1 approved -> progresses to Level 2
